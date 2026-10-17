@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Log In{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card card">
+    <div class="auth-hdr">
+      <h1>Welcome back</h1>
+      <p>Log in to access your symptom checker</p>
+    </div>
+    {% if error %}
+      <div class="form-error" role="alert">{{ error }}</div>
+    {% endif %}
+    <form method="POST" action="/login" novalidate>
+      <div class="fg">
+        <label class="fl" for="email">Email address</label>
+        <input id="email" name="email" type="email" class="fi" required
+               autocomplete="email" placeholder="you@example.com"/>
+      </div>
+      <div class="fg">
+        <label class="fl" for="password">Password</label>
+        <input id="password" name="password" type="password" class="fi" required
+               autocomplete="current-password" placeholder="••••••••"/>
+      </div>
+      <button type="submit" class="btn btn-p" style="width:100%;justify-content:center">
+        Sign In
+      </button>
+    </form>
+    <p class="text-center mt-4" style="font-size:.88rem">
+      Don't have an account? <a href="/register">Create one free</a>
+    </p>
+    <p class="text-center mt-4" style="font-size:.8rem;color:var(--muted)">
+      Demo admin: <code>admin@symptomchecker.com</code> / <code>Admin@1234</code>
+    </p>
+  </div>
+</div>
+{% endblock %}
