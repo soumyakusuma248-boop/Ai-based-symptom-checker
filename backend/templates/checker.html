@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Symptom Checker{% endblock %}
+{% block body %}
+<main id="main" class="page">
+  <h1 class="sec-title">Symptom Checker</h1>
+
+  <div class="disclaimer" role="note">
+    <strong>⚠️ Medical Disclaimer:</strong> This tool provides general triage guidance only and is
+    <strong>not</strong> a diagnosis. Always consult a qualified healthcare professional.
+    For emergencies, call <strong>911</strong> immediately.
+  </div>
+
+  {% if error %}
+    <div class="form-error" role="alert" style="margin-bottom:16px">{{ error }}</div>
+  {% endif %}
+
+  <form method="POST" action="/checker" aria-label="Symptom check form">
+
+    <!-- ── Symptom Checklist ── -->
+    <div class="card">
+      <div class="flex-between" style="flex-wrap:wrap;gap:10px;margin-bottom:12px">
+        <h2 class="card-title" style="margin:0">✅ Select Your Symptoms</h2>
+        <input id="sym-filter" type="search" class="sym-search" style="max-width:220px;margin:0"
+               placeholder="Filter symptoms…" aria-label="Filter symptoms list"/>
+      </div>
+
+      {% if selected %}
+      <div class="chips" aria-label="{{ selected|length }} symptoms selected">
+        {% for s in selected %}<span class="chip">{{ s }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      <fieldset style="border:none;padding:0">
+        <legend style="position:absolute;width:1px;height:1px;overflow:hidden">Available symptoms</legend>
+        <div class="sym-grid" role="group" aria-label="Symptom checkboxes">
+          {% for sym in available_symptoms %}
+          <label class="sym-item {% if sym in selected %}on{% endif %}">
+            <input type="checkbox" name="symptoms" value="{{ sym }}"
+                   {% if sym in selected %}checked{% endif %}
+                   aria-label="{{ sym }}"/>
+            {{ sym }}
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+    </div>
+
+    <!-- ── Free text ── -->
+    <div class="card">
+      <h2 class="card-title">📝 Describe in Your Own Words</h2>
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:10px">
+        Optionally describe your symptoms, duration, or other relevant details.
+      </p>
+      <textarea name="free_text" class="fi" style="min-height:95px"
+                placeholder="e.g. I have had a fever for 2 days with a productive cough and shortness of breath…"
+                maxlength="1000" aria-label="Free-text symptom description">{{ free_text }}</textarea>
+    </div>
+
+    <div class="btn-row">
+      <button type="submit" class="btn btn-p" style="font-size:.95rem;padding:11px 28px">
+        🔍 Check Symptoms
+      </button>
+      <a href="/checker"><button type="button" class="btn btn-s">🔄 Reset</button></a>
+    </div>
+  </form>
+
+  <!-- ── Triage Result ── -->
+  {% if result %}
+  <section id="result" aria-live="polite" aria-label="Triage result" style="margin-top:28px">
+
+    {% set meta = {
+      'emergency':  {'label':'EMERGENCY',    'emoji':'🚨', 'heading':'Seek Emergency Care Immediately'},
+      'see_doctor': {'label':'SEE A DOCTOR', 'emoji':'👨‍⚕️', 'heading':'Schedule a Doctor Visit'},
+      'self_care':  {'label':'SELF-CARE',    'emoji':'🏠', 'heading':'Self-Care at Home'},
+    } %}
+    {% set m = meta[result.triage_level] %}
+
+    <div class="t-box {{ result.triage_level }}" role="region" aria-label="Triage level: {{ result.triage_level }}">
+      <span class="t-badge {{ result.triage_level }}">{{ m.emoji }} {{ m.label }}</span>
+      <div class="t-title">{{ m.heading }}</div>
+
+      {% if result.cautious_override %}
+      <div class="alert-warn">
+        ⚠️ <strong>Cautious mode:</strong> Low confidence match — defaulting to higher urgency for your safety.
+      </div>
+      {% endif %}
+
+      <p class="t-advice">{{ result.advice }}</p>
+      <div style="font-size:.83rem;color:var(--muted)">
+        Confidence score: <strong>{{ (result.confidence_score * 100)|int }}%</strong>
+      </div>
+    </div>
+
+    <!-- Possible conditions -->
+    {% if result.matched_conditions %}
+    <div class="card">
+      <h3 class="card-title">🩺 Possible Related Conditions</h3>
+      <div class="c-list">
+        {% for c in result.matched_conditions %}
+        <div class="c-item">
+          <div>
+            <div class="c-name">{{ c.condition }}</div>
+            {% if c.description %}
+              <div class="c-desc">{{ c.description }}</div>
+            {% endif %}
+          </div>
+          <div class="c-meta">
+            <span class="uc {{ c.urgency }}">{{ c.urgency|replace('_',' ') }}</span>
+            <span class="score">{{ (c.score * 100)|int }}% match</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Next steps -->
+    <div class="card">
+      <h3 class="card-title">📋 Recommended Next Steps</h3>
+      <ul class="steps" aria-label="Recommended next steps">
+        {% for step in result.next_steps %}
+          <li>{{ step }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Nearby care -->
+    <div class="card">
+      <h3 class="card-title">📍 Nearby Care Options</h3>
+      <div class="care-grid">
+        {% for place in result.nearby_care %}
+        <div class="care-card">
+          <span class="care-tag uc {{ result.triage_level }}">{{ place.type }}</span>
+          <div class="care-name">{{ place.name }}</div>
+          <div class="care-meta">
+            <span>📏 {{ place.distance }}</span>
+            <span>📞 {{ place.phone }}</span>
+            <span>⏱ Wait: {{ place.wait }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Reminder:</strong> This recommendation is for informational purposes only and does not
+      constitute medical advice. Always consult a licensed healthcare professional for diagnosis and treatment.
+    </div>
+
+  </section>
+  <script>document.getElementById('result')?.scrollIntoView({behavior:'smooth',block:'start'});</script>
+  {% endif %}
+
+</main>
+{% endblock %}
