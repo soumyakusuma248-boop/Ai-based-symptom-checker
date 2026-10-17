@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block body %}
+<section class="hero" aria-labelledby="hero-heading">
+  <h1 id="hero-heading">AI-Powered Symptom Checker</h1>
+  <p>Enter your symptoms and receive an instant triage recommendation powered by a rule-based clinical knowledge base.</p>
+  <div class="hero-btns">
+    {% if user %}
+      <a href="/checker"><button class="hbw">➕ Check My Symptoms</button></a>
+    {% else %}
+      <a href="/register"><button class="hbw">Get Started — Free</button></a>
+      <a href="/login"><button class="hbo">Log In</button></a>
+    {% endif %}
+  </div>
+</section>
+
+<main id="main" class="page">
+  <div class="feat-grid">
+    {% for icon, title, desc in [
+      ('🔍','Symptom Analysis','Select from a comprehensive checklist or describe symptoms in your own words.'),
+      ('🚦','Triage Recommendation','Instant rule-based result: self-care, see a doctor, or emergency.'),
+      ('🏥','Nearby Care','Find relevant care facilities based on your triage level.'),
+      ('📋','Symptom History','Secure, encrypted log of your past symptom checks.'),
+      ('🔒','Private & Secure','All health data is encrypted at rest with access controls.'),
+      ('⚕️','Medical Disclaimer','Results are triage guidance only — not a clinical diagnosis.'),
+    ] %}
+    <div class="feat-card">
+      <div class="feat-icon" aria-hidden="true">{{ icon }}</div>
+      <div>
+        <div class="feat-title">{{ title }}</div>
+        <div class="feat-desc">{{ desc }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="disclaimer" role="note" aria-label="Medical disclaimer">
+    <strong>⚠️ Medical Disclaimer:</strong> SymptomAI provides general health information and triage guidance only.
+    It is <strong>not</strong> a substitute for professional medical advice, diagnosis, or treatment.
+    Always seek the advice of a qualified health provider with any questions about a medical condition.
+    In a medical emergency, call <strong>911</strong> immediately.
+  </div>
+</main>
+{% endblock %}
