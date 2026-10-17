@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}My History{% endblock %}
+{% block body %}
+<main id="main" class="page">
+  <div class="flex-between" style="flex-wrap:wrap;gap:10px;margin-bottom:20px">
+    <h1 class="sec-title" style="margin-bottom:0">My Symptom History</h1>
+    <a href="/history"><button class="btn btn-s btn-sm">🔄 Refresh</button></a>
+  </div>
+
+  {% if not checks %}
+  <div class="card text-center">
+    <p class="text-muted" style="font-size:.95rem">No symptom checks yet.
+      <a href="/checker">Run your first check →</a>
+    </p>
+  </div>
+  {% else %}
+
+  <section aria-label="Past symptom checks">
+    {% for check in checks %}
+    {% set meta = {
+      'emergency':  {'label':'Emergency',    'emoji':'🚨', 'cls':'emergency'},
+      'see_doctor': {'label':'See a Doctor', 'emoji':'👨‍⚕️', 'cls':'see_doctor'},
+      'self_care':  {'label':'Self-Care',    'emoji':'🏠', 'cls':'self_care'},
+    } %}
+    {% set m = meta.get(check.triage_level, meta.see_doctor) %}
+
+    <details class="h-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);margin-bottom:10px;overflow:hidden">
+      <summary class="h-header" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;list-style:none;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="uc {{ m.cls }}">{{ m.emoji }} {{ m.label }}</span>
+          <span style="font-size:.88rem;font-weight:500">
+            {% if check.symptoms %}
+              {{ check.symptoms[:3] | join(', ') }}{% if check.symptoms | length > 3 %} +{{ check.symptoms | length - 3 }} more{% endif %}
+            {% else %}
+              <span class="text-muted">No symptoms recorded</span>
+            {% endif %}
+          </span>
+        </div>
+        <span class="hdate">{{ check.created_at | fmt_date }}</span>
+      </summary>
+
+      <div class="h-detail" style="border-top:1px solid var(--border);padding:18px">
+        {% if check.symptoms %}
+        <div class="chips" style="margin-bottom:12px">
+          {% for s in check.symptoms %}<span class="chip">{{ s }}</span>{% endfor %}
+        </div>
+        {% endif %}
+
+        {% if check.free_text %}
+        <div style="margin-bottom:10px;font-size:.88rem">
+          <strong>Notes:</strong>
+          <span class="text-muted" style="margin-left:4px">{{ check.free_text }}</span>
+        </div>
+        {% endif %}
+
+        <div style="font-size:.88rem;margin-bottom:14px">
+          <strong>Confidence:</strong> {{ (check.confidence_score * 100) | int }}%
+        </div>
+
+        {% if check.matched_conditions %}
+        <div style="margin-bottom:16px">
+          <strong style="font-size:.88rem">Possible conditions:</strong>
+          <div class="c-list" style="margin-top:8px">
+            {% for c in check.matched_conditions %}
+            <div class="c-item" style="padding:9px 12px">
+              <div>
+                <div class="c-name" style="font-size:.88rem">{{ c.condition }}</div>
+              </div>
+              <span class="uc {{ c.urgency }}" style="font-size:.75rem;flex-shrink:0">
+                {{ c.urgency | replace('_', ' ') }}
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/history/delete/{{ check.id }}"
+              onsubmit="return confirm('Delete this symptom check record?')">
+          <button type="submit" class="btn btn-d btn-sm"
+                  aria-label="Delete check from {{ check.created_at | fmt_date }}">
+            🗑 Delete Record
+          </button>
+        </form>
+      </div>
+    </details>
+    {% endfor %}
+  </section>
+
+  <!-- Pagination -->
+  {% if pagination.pages > 1 %}
+  <nav aria-label="History pagination" style="display:flex;gap:8px;justify-content:center;margin-top:20px;align-items:center">
+    {% if pagination.has_prev %}
+      <a href="/history?page={{ pagination.prev_num }}">
+        <button class="btn btn-s btn-sm">← Previous</button>
+      </a>
+    {% else %}
+      <button class="btn btn-s btn-sm" disabled>← Previous</button>
+    {% endif %}
+    <span style="padding:5px 12px;font-size:.88rem;color:var(--muted)">
+      Page {{ pagination.page }} of {{ pagination.pages }}
+    </span>
+    {% if pagination.has_next %}
+      <a href="/history?page={{ pagination.next_num }}">
+        <button class="btn btn-s btn-sm">Next →</button>
+      </a>
+    {% else %}
+      <button class="btn btn-s btn-sm" disabled>Next →</button>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% endif %}
+</main>
+{% endblock %}
