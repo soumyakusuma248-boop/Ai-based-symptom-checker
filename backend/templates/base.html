@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}SymptomAI{% endblock %} — AI Symptom Checker</title>
+  <style>
+    /* ── CSS Variables ── */
+    :root{
+      --bg:#f4f7fb;--surface:#fff;--border:#d1d9e6;--text:#1a202c;
+      --muted:#64748b;--primary:#1a73e8;--primary-dk:#1557b0;--primary-lt:#e8f0fe;
+      --red:#dc2626;--red-bg:#fef2f2;--red-bd:#fecaca;
+      --amber:#b45309;--amber-bg:#fffbeb;--amber-bd:#fde68a;
+      --green:#15803d;--green-bg:#f0fdf4;--green-bd:#bbf7d0;
+      --radius:10px;--rsm:6px;
+      --font:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;
+      --shadow:0 1px 3px rgba(0,0,0,.08);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px;scroll-behavior:smooth}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+    a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
+    button,input,textarea,select{font-family:var(--font)}
+    /* ── Skip link ── */
+    .skip{position:absolute;top:-40px;left:0;background:var(--primary);color:#fff;
+          padding:8px 16px;border-radius:0 0 var(--rsm) 0;font-weight:600;z-index:9999;transition:top .15s}
+    .skip:focus{top:0}
+    :focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+    /* ── Navbar ── */
+    .nav{background:var(--surface);border-bottom:1px solid var(--border);box-shadow:var(--shadow);
+         position:sticky;top:0;z-index:100}
+    .nav-in{display:flex;align-items:center;justify-content:space-between;
+            height:60px;max-width:1100px;margin:0 auto;padding:0 20px;gap:10px}
+    .nav-brand{display:flex;align-items:center;gap:8px;font-size:1.1rem;font-weight:700;color:var(--primary)}
+    .nav-links{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+    .nav-link{padding:6px 12px;border-radius:var(--rsm);font-size:.88rem;font-weight:500;color:var(--muted);transition:.15s}
+    .nav-link:hover,.nav-link.active{background:var(--primary-lt);color:var(--primary);text-decoration:none}
+    .nav-btn{padding:6px 16px;border:none;border-radius:var(--rsm);font-size:.88rem;font-weight:600;
+             background:var(--primary);color:#fff;cursor:pointer;transition:.15s}
+    .nav-btn:hover{background:var(--primary-dk)}
+    .nav-btn.out{background:transparent;color:var(--primary);border:1.5px solid var(--primary)}
+    .nav-btn.out:hover{background:var(--primary-lt)}
+    /* ── Flash messages ── */
+    .flash-wrap{max-width:1100px;margin:12px auto 0;padding:0 20px}
+    .flash{padding:11px 15px;border-radius:var(--rsm);font-size:.88rem;margin-bottom:8px;border:1px solid}
+    .flash.success{background:var(--green-bg);color:#166534;border-color:var(--green-bd)}
+    .flash.danger{background:var(--red-bg);color:#991b1b;border-color:var(--red-bd)}
+    .flash.warning{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd)}
+    .flash.info{background:var(--primary-lt);color:#1e40af;border-color:#bfdbfe}
+    /* ── Layout ── */
+    .page{max-width:1100px;margin:0 auto;padding:32px 20px}
+    /* ── Cards ── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+          box-shadow:var(--shadow);padding:24px;margin-bottom:18px}
+    .card-title{font-size:1rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+    /* ── Disclaimer ── */
+    .disclaimer{background:#fff8e1;border:1.5px solid #ffe082;border-radius:var(--radius);
+                padding:14px 18px;font-size:.87rem;color:#5d4037;line-height:1.55;margin-bottom:20px}
+    .disclaimer strong{color:#bf6f00}
+    /* ── Forms ── */
+    .fg{margin-bottom:16px}
+    .fl{display:block;font-weight:600;font-size:.87rem;margin-bottom:5px}
+    .fi{width:100%;padding:9px 13px;border:1.5px solid var(--border);border-radius:var(--rsm);
+        font-size:.9rem;outline:none;transition:.15s}
+    .fi:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,115,232,.15)}
+    select.fi{cursor:pointer}
+    textarea.fi{resize:vertical;min-height:80px}
+    .form-error{color:var(--red);font-size:.83rem;margin-top:5px;padding:9px 13px;
+                background:var(--red-bg);border-radius:var(--rsm);border:1px solid var(--red-bd)}
+    /* ── Buttons ── */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border:none;
+         border-radius:var(--rsm);font-size:.9rem;font-weight:600;cursor:pointer;transition:.15s}
+    .btn:active{transform:scale(.98)}
+    .btn-p{background:var(--primary);color:#fff}.btn-p:hover{background:var(--primary-dk)}
+    .btn-s{background:#f1f5f9;color:var(--text);border:1px solid var(--border)}.btn-s:hover{background:#e2e8f0}
+    .btn-d{background:var(--red);color:#fff}.btn-d:hover{background:#b91c1c}
+    .btn-sm{padding:5px 13px;font-size:.82rem}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+    /* ── Symptom grid ── */
+    .sym-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+    .sym-item{display:flex;align-items:center;gap:8px;padding:9px 12px;
+              border:1.5px solid var(--border);border-radius:var(--rsm);cursor:pointer;
+              font-size:.88rem;user-select:none;transition:.15s}
+    .sym-item:hover{border-color:var(--primary);background:var(--primary-lt)}
+    .sym-item.on{border-color:var(--primary);background:var(--primary-lt);color:var(--primary);font-weight:600}
+    .sym-item input{accent-color:var(--primary);width:15px;height:15px;flex-shrink:0}
+    .sym-search{width:100%;padding:9px 13px;border:1.5px solid var(--border);border-radius:var(--rsm);
+                font-size:.9rem;outline:none;transition:.15s;margin-bottom:14px}
+    .sym-search:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,115,232,.15)}
+    /* ── Chips ── */
+    .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+    .chip{background:var(--primary-lt);color:var(--primary);border-radius:99px;
+          padding:3px 12px;font-size:.8rem;font-weight:500}
+    /* ── Triage result ── */
+    .t-box{border-radius:var(--radius);padding:22px;border:2px solid;margin-bottom:18px}
+    .t-box.emergency{background:var(--red-bg);border-color:var(--red)}
+    .t-box.see_doctor{background:var(--amber-bg);border-color:#d97706}
+    .t-box.self_care{background:var(--green-bg);border-color:#16a34a}
+    .t-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 13px;border-radius:99px;
+             font-weight:700;font-size:.77rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+    .t-badge.emergency{background:var(--red);color:#fff}
+    .t-badge.see_doctor{background:#d97706;color:#fff}
+    .t-badge.self_care{background:#16a34a;color:#fff}
+    .t-title{font-size:1.25rem;font-weight:700;margin-bottom:8px}
+    .t-advice{font-size:.92rem;line-height:1.65;margin-bottom:12px}
+    /* ── Urgency chip ── */
+    .uc{border-radius:99px;padding:2px 11px;font-size:.78rem;font-weight:600}
+    .uc.emergency{background:var(--red-bg);color:var(--red)}
+    .uc.see_doctor{background:var(--amber-bg);color:var(--amber)}
+    .uc.self_care{background:var(--green-bg);color:var(--green)}
+    /* ── Conditions list ── */
+    .c-list{display:flex;flex-direction:column;gap:8px}
+    .c-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);
+            padding:11px 13px;display:flex;align-items:flex-start;justify-content:space-between;
+            gap:10px;flex-wrap:wrap}
+    .c-name{font-weight:600;font-size:.9rem}
+    .c-desc{font-size:.82rem;color:var(--muted);margin-top:2px}
+    .c-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+    .score{font-size:.78rem;color:var(--muted);background:#f1f5f9;border-radius:99px;padding:2px 10px}
+    /* ── Steps / Care ── */
+    .steps{list-style:none;display:flex;flex-direction:column;gap:7px}
+    .steps li{display:flex;align-items:flex-start;gap:8px;padding:9px 13px;
+              background:#f8fafd;border-radius:var(--rsm);font-size:.88rem}
+    .steps li::before{content:"→";color:var(--primary);font-weight:700;flex-shrink:0}
+    .care-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+    .care-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:14px}
+    .care-name{font-weight:600;font-size:.9rem;margin-bottom:3px}
+    .care-meta{color:var(--muted);font-size:.83rem;display:flex;flex-direction:column;gap:2px}
+    .care-tag{display:inline-block;font-size:.73rem;padding:2px 8px;border-radius:99px;font-weight:600;margin-bottom:5px}
+    /* ── History ── */
+    .h-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);
+            margin-bottom:10px;overflow:hidden}
+    .h-header{display:flex;align-items:center;justify-content:space-between;
+              padding:14px 18px;cursor:pointer;gap:10px;flex-wrap:wrap}
+    .h-detail{border-top:1px solid var(--border);padding:18px}
+    .hdate{font-size:.8rem;color:var(--muted)}
+    /* ── Admin ── */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:16px;text-align:center}
+    .stat-val{font-size:1.5rem;font-weight:700}.stat-lbl{font-size:.8rem;color:var(--muted);margin-top:2px}
+    .tbl-wrap{overflow-x:auto;border-radius:var(--rsm);border:1px solid var(--border)}
+    .tbl{width:100%;border-collapse:collapse;font-size:.88rem}
+    .tbl th{background:#f1f5f9;font-weight:700;text-align:left;padding:10px 13px;border-bottom:2px solid var(--border)}
+    .tbl td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:top}
+    .tbl tr:hover td{background:#f8fafd}
+    /* ── Auth ── */
+    .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+    .auth-card{width:100%;max-width:420px}
+    .auth-hdr{text-align:center;margin-bottom:22px}
+    .auth-hdr h1{font-size:1.4rem;font-weight:700;margin-bottom:5px}
+    .auth-hdr p{color:var(--muted);font-size:.88rem}
+    /* ── Hero ── */
+    .hero{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:50px 20px;text-align:center}
+    .hero h1{font-size:2rem;font-weight:700;margin-bottom:10px}
+    .hero p{font-size:.98rem;opacity:.9;max-width:540px;margin:0 auto 22px}
+    .hero-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .hbw{padding:11px 26px;border:none;border-radius:var(--rsm);font-size:.95rem;font-weight:700;
+         background:#fff;color:var(--primary);cursor:pointer;transition:.15s}
+    .hbw:hover{background:#eef2ff}
+    .hbo{padding:11px 26px;border:2px solid rgba(255,255,255,.8);border-radius:var(--rsm);
+         font-size:.95rem;font-weight:600;background:transparent;color:#fff;cursor:pointer;transition:.15s}
+    .hbo:hover{background:rgba(255,255,255,.1)}
+    /* ── Features ── */
+    .feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px}
+    .feat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+               padding:18px;display:flex;gap:13px;box-shadow:var(--shadow)}
+    .feat-icon{font-size:1.7rem;line-height:1;flex-shrink:0}
+    .feat-title{font-weight:700;font-size:.93rem;margin-bottom:3px}
+    .feat-desc{font-size:.83rem;color:var(--muted)}
+    /* ── Misc ── */
+    .sec-title{font-size:1.2rem;font-weight:700;margin-bottom:16px}
+    .alert-warn{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd);
+                padding:10px 13px;border-radius:var(--rsm);font-size:.88rem;margin-bottom:12px}
+    .alert-info{background:var(--primary-lt);color:#1e40af;border:1px solid #bfdbfe;
+                padding:10px 13px;border-radius:var(--rsm);font-size:.88rem;margin-bottom:12px}
+    .text-muted{color:var(--muted)}.text-center{text-align:center}
+    .flex{display:flex}.flex-between{display:flex;align-items:center;justify-content:space-between}
+    .gap-2{gap:8px}.gap-3{gap:12px}.mt-4{margin-top:16px}.mt-6{margin-top:24px}
+    /* ── Responsive ── */
+    @media(max-width:640px){
+      .hero h1{font-size:1.5rem}.sym-grid{grid-template-columns:1fr 1fr}
+      .care-grid{grid-template-columns:1fr}.page{padding:16px 14px}
+    }
+  </style>
+</head>
+<body>
+<a href="#main" class="skip">Skip to main content</a>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-in">
+    <a class="nav-brand" href="/" aria-label="SymptomAI home">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+        <circle cx="13" cy="13" r="13" fill="#1a73e8"/>
+        <path d="M13 6v14M6 13h14" stroke="#fff" stroke-width="2.3" stroke-linecap="round"/>
+        <circle cx="13" cy="13" r="3.5" fill="#fff" opacity=".3"/>
+      </svg>
+      SymptomAI
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link {% if request.endpoint=='home' %}active{% endif %}">Home</a>
+      {% if user %}
+        <a href="/checker" class="nav-link {% if request.endpoint=='checker' %}active{% endif %}">Check Symptoms</a>
+        <a href="/history" class="nav-link {% if request.endpoint=='history' %}active{% endif %}">My History</a>
+        {% if user.is_admin %}
+          <a href="/admin" class="nav-link {% if request.endpoint=='admin_dashboard' %}active{% endif %}">Admin</a>
+        {% endif %}
+        <span class="nav-link text-muted">👤 {{ user.username }}</span>
+        <a href="/logout"><button class="nav-btn out">Log out</button></a>
+      {% else %}
+        <a href="/login" class="nav-link {% if request.endpoint=='login' %}active{% endif %}">Log in</a>
+        <a href="/register"><button class="nav-btn">Get Started</button></a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-wrap" aria-live="polite">
+    {% for category, message in messages %}
+      <div class="flash {{ category }}" role="alert">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+{% block body %}{% endblock %}
+
+<script>
+// Symptom filter — client-side only, no framework
+(function(){
+  var inp = document.getElementById('sym-filter');
+  if(!inp) return;
+  inp.addEventListener('input', function(){
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('.sym-item').forEach(function(el){
+      el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+})();
+</script>
+</body>
+</html>
