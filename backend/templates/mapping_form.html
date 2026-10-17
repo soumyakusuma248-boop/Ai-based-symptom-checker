@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Mapping{% endblock %}
+{% block body %}
+<main id="main" class="page" style="max-width:620px">
+  <div style="margin-bottom:16px">
+    <a href="/admin" style="font-size:.88rem">← Back to Admin</a>
+  </div>
+  <div class="card">
+    <h1 class="sec-title">{{ action }} Symptom Mapping</h1>
+
+    {% if error %}
+      <div class="form-error" role="alert" style="margin-bottom:16px">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" novalidate>
+      <div class="fg">
+        <label class="fl" for="m-name">Mapping Name</label>
+        <input id="m-name" name="name" class="fi" required
+               placeholder="e.g. Common Cold"
+               value="{{ mapping.name if mapping else '' }}"/>
+      </div>
+      <div class="fg">
+        <label class="fl" for="m-condition">Condition</label>
+        <input id="m-condition" name="condition" class="fi" required
+               placeholder="e.g. Viral Upper Respiratory Infection"
+               value="{{ mapping.condition if mapping else '' }}"/>
+      </div>
+      <div class="fg">
+        <label class="fl" for="m-symptoms">
+          Symptom Keywords
+          <span style="font-weight:400;color:var(--muted)">(comma-separated)</span>
+        </label>
+        <textarea id="m-symptoms" name="symptoms" class="fi" style="min-height:70px"
+                  placeholder="fever, cough, sore throat, fatigue" required>{% if mapping %}{{ mapping.symptoms_list()|join(', ') }}{% endif %}</textarea>
+      </div>
+      <div class="fg">
+        <label class="fl" for="m-urgency">Urgency Level</label>
+        <select id="m-urgency" name="urgency" class="fi">
+          {% for opt in ['self_care','see_doctor','emergency'] %}
+          <option value="{{ opt }}" {% if mapping and mapping.urgency == opt %}selected{% elif not mapping and opt == 'see_doctor' %}selected{% endif %}>
+            {{ opt|replace('_',' ') }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl" for="m-desc">Description <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <textarea id="m-desc" name="description" class="fi" style="min-height:60px"
+                  placeholder="Brief condition description…">{{ mapping.description if mapping else '' }}</textarea>
+      </div>
+      <div class="fg">
+        <label class="fl" for="m-advice">Advice <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <textarea id="m-advice" name="advice" class="fi" style="min-height:60px"
+                  placeholder="Recommended next steps for the patient…">{{ mapping.advice if mapping else '' }}</textarea>
+      </div>
+      <div class="btn-row">
+        <button type="submit" class="btn btn-p">💾 Save Mapping</button>
+        <a href="/admin"><button type="button" class="btn btn-s">Cancel</button></a>
+      </div>
+    </form>
+  </div>
+</main>
+{% endblock %}
